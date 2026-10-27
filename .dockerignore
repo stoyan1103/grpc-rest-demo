@@ -1,0 +1,12 @@
+.git
+.idea
+.run
+.vscode
+**/*.iml
+**/target/
+**/build/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example

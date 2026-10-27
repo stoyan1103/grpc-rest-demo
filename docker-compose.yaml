@@ -1,0 +1,24 @@
+services:
+  grpc-server:
+    image: grpc-rest-demo/order-grpc-server:local
+    build:
+      context: .
+      dockerfile: order-grpc-server/Dockerfile
+    environment:
+      GRPC_SERVER_PORT: "9090"
+    ports:
+      - "9090:9090"
+
+  rest-api:
+    image: grpc-rest-demo/order-rest-api:local
+    build:
+      context: .
+      dockerfile: order-rest-api/Dockerfile
+    environment:
+      SERVER_PORT: "8080"
+      GRPC_ORDER_SERVICE_HOST: grpc-server
+      GRPC_ORDER_SERVICE_PORT: "9090"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - grpc-server

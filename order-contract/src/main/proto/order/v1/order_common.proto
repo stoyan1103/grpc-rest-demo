@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package order.v1;
+
+option java_multiple_files = true;
+option java_package = "com.example.grpcdemo.contract.order.v1";
+option java_outer_classname = "OrderCommonProto";
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  CREATED = 1;
+  PREPARING = 2;
+  PICKED_UP = 3;
+  ON_THE_WAY = 4;
+  DELIVERED = 5;
+  CANCELLED = 6;
+}
+
+enum DriverCommandType {
+  DRIVER_COMMAND_TYPE_UNSPECIFIED = 0;
+  ACCEPT_ORDER = 1;
+  PICK_UP_ORDER = 2;
+  START_DELIVERY = 3;
+  COMPLETE_DELIVERY = 4;
+}
+
+message OrderItemGrpc {
+  string product_id = 1;
+  string name = 2;
+  int32 quantity = 3;
+  double price = 4;
+}

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package order.v1;
+
+option java_multiple_files = true;
+option java_package = "com.example.grpcdemo.contract.order.v1";
+option java_outer_classname = "OrderResponsesProto";
+
+import "order/v1/order_common.proto";
+
+message CreateOrderGrpcResponse {
+  string order_id = 1;
+  string customer_name = 2;
+  string address = 3;
+  OrderStatus status = 4;
+  repeated OrderItemGrpc items = 5;
+}
+
+message GetOrderGrpcResponse {
+  string order_id = 1;
+  string customer_name = 2;
+  string address = 3;
+  OrderStatus status = 4;
+  repeated OrderItemGrpc items = 5;
+}
+
+message TrackingEventsGrpcResponse {
+  string order_id = 1;
+  OrderStatus status = 2;
+  string message = 3;
+  int64 timestamp = 4;
+}
+
+message QuoteGrpcResponse {
+  double delivery_price = 1;
+  int32 estimated_delivery_time_minutes = 2;
+}
+
+message GetOrderGrpcResponseList {
+  repeated GetOrderGrpcResponse orders = 1;
+}

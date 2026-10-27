@@ -1,0 +1,413 @@
+openapi: 3.0.3
+
+info:
+  title: gRPC REST Demo API
+  version: 1.0.0
+  description: REST facade API that calls a plain Java gRPC service.
+
+servers:
+  - url: http://localhost:8080
+    description: Local REST API
+
+tags:
+  - name: orders
+    description: Order operations
+  - name: server-info
+    description: Server information
+
+paths:
+  /orders:
+    get:
+      tags:
+        - orders
+      operationId: getOrders
+      summary: Retrieves all orders through the unary gRPC ListOrders call
+      responses:
+        '200':
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GetOrderResponse'
+    post:
+      tags:
+        - orders
+      operationId: createOrder
+      summary: Creates a new order through gRPC unary call
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+            description: Order created
+            content:
+              application/json:
+                schema:
+                    $ref: '#/components/schemas/CreateOrderResponse'
+        '400':
+            description: Invalid request
+            content:
+              application/json:
+                schema:
+                    $ref: '#/components/schemas/ErrorResponse'
+  /orders/{orderId}:
+    get:
+      tags:
+        - orders
+      operationId: getOrder
+      summary: Retrieves an order by ID through gRPC unary call
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Order Identifier
+          schema:
+            type: string
+            minLength: 1
+            example: 6e92b0d5-91c1-4f18-a7f9-3b7f6c7c4b0a
+      responses:
+        '200':
+            description: Order found
+            content:
+              application/json:
+                schema:
+                    $ref: '#/components/schemas/GetOrderResponse'
+        '400':
+            description: Invalid order ID
+            content:
+              application/json:
+                schema:
+                    $ref: '#/components/schemas/ErrorResponse'
+        '404':
+            description: Order not found
+            content:
+              application/json:
+                schema:
+                    $ref: '#/components/schemas/ErrorResponse'
+  /orders/{orderId}/tracking:
+    get:
+      tags:
+        - orders
+      operationId: getOrderTracking
+      summary: Returns tracking events from the gRPC server stream
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Order identifier
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        '200':
+          description: Tracking events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrackingEventResponse'
+        '400':
+          description: Invalid order ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /orders/quote:
+    post:
+      tags:
+        - orders
+      operationId: calculateQuote
+      summary: Calculates a delivery quote from streamed quote items
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              minItems: 1
+              items:
+                $ref: '#/components/schemas/QuoteItemRequest'
+      responses:
+        '200':
+          description: Delivery quote
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteResponse'
+        '400':
+          description: Invalid quote request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders/{orderId}/live-tracking:
+    post:
+      tags:
+        - orders
+      operationId: liveTrackOrder
+      summary: Sends driver commands through the gRPC bidirectional tracking call
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              minItems: 1
+              items:
+                $ref: '#/components/schemas/LiveTrackingCommandRequest'
+      responses:
+        '200':
+          description: Tracking events produced for the commands
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrackingEventResponse'
+        '400':
+          description: Invalid order ID or driver command
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /server-info:
+    get:
+      tags:
+        - server-info
+      operationId: getServerInfo
+      summary: Returns information about the server
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json;charset=utf-8:
+              schema:
+                $ref: '#/components/schemas/ServerInfo'
+
+components:
+  schemas:
+    CreateOrderRequest:
+      type: object
+      required:
+        - customerName
+        - address
+        - items
+      properties:
+        customerName:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: Ivan Georgiev
+        address:
+          type: string
+          minLength: 5
+          maxLength: 200
+          example: Sofia, Bulgaria
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderItem'
+
+    OrderItem:
+      type: object
+      required:
+        - productId
+        - name
+        - quantity
+        - price
+      properties:
+        productId:
+          type: string
+          minLength: 1
+          example: P-100
+        name:
+          type: string
+          minLength: 1
+          example: Keyboard
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 2
+        price:
+          type: number
+          format: double
+          minimum: 0.01
+          example: 49.99
+
+    CreateOrderResponse:
+        type: object
+        required:
+          - orderId
+          - status
+        properties:
+          orderId:
+            type: string
+            minLength: 1
+            example: 6e92b0d5-91c1-4f18-a7f9-3b7f6c7c4b0a
+          status:
+            type: string
+            example: CREATED
+
+    GetOrderResponse:
+      type: object
+      required:
+        - orderId
+        - customerName
+        - address
+        - items
+        - status
+      properties:
+        orderId:
+          type: string
+          example: 6e92b0d5-91c1-4f18-a7f9-3b7f6c7c4b0a
+        customerName:
+          type: string
+          example: Ivan Georgiev
+        address:
+          type: string
+          example: Sofia, Bulgaria
+        status:
+          type: string
+          example: CREATED
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+
+    TrackingEventResponse:
+      type: object
+      required:
+        - orderId
+        - status
+        - message
+        - timestamp
+      properties:
+        orderId:
+          type: string
+        status:
+          type: string
+          enum: [CREATED, PREPARING, PICKED_UP, ON_THE_WAY, DELIVERED, CANCELLED]
+        message:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds
+
+    QuoteItemRequest:
+      type: object
+      required:
+        - productId
+        - quantity
+        - weight
+      properties:
+        productId:
+          type: string
+          minLength: 1
+          example: P-100
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 2
+        weight:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 100
+          description: Weight of one product unit in kilograms
+          example: 0.5
+
+    QuoteResponse:
+      type: object
+      required:
+        - deliveryPrice
+        - estimatedDeliveryTimeMinutes
+      properties:
+        deliveryPrice:
+          type: number
+          format: double
+          minimum: 0
+        estimatedDeliveryTimeMinutes:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 33
+
+    LiveTrackingCommandRequest:
+      type: object
+      required:
+        - command
+      properties:
+        command:
+          type: string
+          enum:
+            - ACCEPT_ORDER
+            - PICK_UP_ORDER
+            - START_DELIVERY
+            - COMPLETE_DELIVERY
+
+    ServerInfo:
+      type: object
+      required:
+        - name
+        - version
+        - status
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: gRPC REST Demo API
+        version:
+          type: string
+          minLength: 1
+          example: 1.0.0
+        status:
+          type: string
+          minLength: 1
+          example: UP
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 400
+        message:
+          type: string
+          minLength: 1
+          example: Invalid request body

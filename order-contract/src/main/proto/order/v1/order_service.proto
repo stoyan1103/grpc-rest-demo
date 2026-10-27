@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package order.v1;
+
+option java_multiple_files = true;
+option java_package = "com.example.grpcdemo.contract.order.v1";
+option java_outer_classname = "OrderServiceProto";
+
+import "google/protobuf/empty.proto";
+import "order/v1/order_requests.proto";
+import "order/v1/order_responses.proto";
+
+service OrderService {
+
+  // Unary: one request -> one response
+  rpc CreateOrder(CreateOrderGrpcRequest) returns (CreateOrderGrpcResponse);
+
+  // ListOrders - Unary: one request -> one response (list of orders)
+  rpc ListOrders(google.protobuf.Empty) returns (GetOrderGrpcResponseList);
+
+  // Unary: one request -> one response
+  rpc GetOrder(GetOrderGrpcRequest) returns (GetOrderGrpcResponse);
+
+  // Server streaming: one request -> stream of responses
+  rpc TrackOrder(TrackOrderGrpcRequest) returns (stream TrackingEventsGrpcResponse);
+
+  // Client streaming: stream of requests -> one response
+  rpc CalculateQuote(stream QuoteItemGrpcRequest) returns (QuoteGrpcResponse);
+
+  // Bidirectional streaming: stream of requests <-> stream of responses
+  rpc LiveTracking(stream DriverCommandGrpcRequest) returns (stream TrackingEventsGrpcResponse);
+}
